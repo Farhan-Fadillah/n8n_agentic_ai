@@ -1,0 +1,648 @@
+{
+  "name": "RAG Check Step Document",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "index2",
+          "mode": "list",
+          "cachedResultName": "index2"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        1488,
+        448
+      ],
+      "id": "917302a4-ab0b-4146-b33b-5b6734282491",
+      "name": "Pinecone Vector Store2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "pineconeApi": {
+          "id": "sf9BBwsyzeQfZr6m",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chunkSize": 700,
+        "chunkOverlap": 100,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        752
+      ],
+      "id": "8b2faa3f-d720-48ec-ab5f-f987f0bfb65f",
+      "name": "Recursive Character Text Splitter1"
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1696,
+        608
+      ],
+      "id": "5b26f638-7146-4eae-a367-0c1cf3b163b7",
+      "name": "Default Data Loader1"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        704
+      ],
+      "id": "99b9bd91-b994-4668-99d0-09f090622673",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sBdhhl2tpOWwFj8k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output['Langkah Kerja'] }}",
+        "options": {
+          "systemMessage": "=Berikut adalah langkah-langkah yang ditemukan di file Anda, tolong periksa dan bandingkan dengan data yang ada di \"Pinecone Vector Store1\":\n\n{{ $json.output['Langkah Kerja'] }}\n\nTolong jawab jika ada yang tidak sesuai atau konfirmasi jika semua langkah sudah sesuai.\n"
+        }
+      },
+      "id": "1630dcce-8d60-4bfc-9e27-b50c6b33a8ff",
+      "name": "AI Agent1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        1552,
+        16
+      ],
+      "typeVersion": 1.7
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Ambil data dari vector database untuk knowledgebase",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "index2",
+          "mode": "list",
+          "cachedResultName": "index2"
+        },
+        "topK": 20,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        2128,
+        272
+      ],
+      "id": "e71f60c5-f89c-4a74-aa88-663913d15a51",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "sf9BBwsyzeQfZr6m",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        240
+      ],
+      "id": "a67a476d-6377-481e-a0ba-59a04d1441d8",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sBdhhl2tpOWwFj8k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $workflow.id }}"
+      },
+      "id": "da558084-2a52-491f-8880-640cc52dc545",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [
+        1648,
+        272
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1TDcT7xjOCAMSG3cAA6Mp3iH0BjrmBPcG",
+          "mode": "list",
+          "cachedResultName": "regulation.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1TDcT7xjOCAMSG3cAA6Mp3iH0BjrmBPcG/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1248,
+        384
+      ],
+      "id": "ca665033-9a8a-43cc-86f8-db582c46bda3",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "45Hk22nk0hbN1DfG",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Input PDF",
+        "formDescription": "Input data PDF",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Input data pdf",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f696c955-3619-44dc-9934-0a196a922134",
+      "name": "On form submission",
+      "webhookId": "d432e9c7-b182-4661-ae82-9d29485d9986"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "purpose",
+              "value": "ocr"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "Input_data_pdf"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "db485a62-c0d5-4760-b09b-fccf3c8f37a4",
+      "name": "UPLOAD TO MISTRAL",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "dfasHHvgsoep1HB9",
+          "name": "Mistral AI OCR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mistral.ai/v1/files/{{ $json.id }}/url",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "expiry",
+              "value": "24"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "24"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "ab52fd73-91f9-4f43-927c-bb6893ce65f6",
+      "name": "GET SIGNED URL",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "dfasHHvgsoep1HB9",
+          "name": "Mistral AI OCR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/ocr",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"mistral-ocr-latest\",\n  \"document\": {\n    \"type\": \"document_url\",\n    \"document_url\": \"{{ $json.url }}\"\n  },\n  \"include_image_base64\": true\n} ",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        592,
+        0
+      ],
+      "id": "5a63ac70-de25-4deb-90e7-3ffab5c6925b",
+      "name": "GET OCR RESULT",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "dfasHHvgsoep1HB9",
+          "name": "Mistral AI OCR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.pages[0].markdown }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Proyek",
+              "description": "the description project name"
+            },
+            {
+              "name": "Tanggal",
+              "description": "date project in string format"
+            },
+            {
+              "name": "Langkah Kerja",
+              "description": "the description of work steps"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "You are an expert extraction algorithm.\nOnly extract relevant information from the text.\nIf you do not know the value of an attribute asked to extract, you may omit the attribute's value."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        864,
+        0
+      ],
+      "id": "2870a41f-a661-4ed0-a174-809f0f1b5ea7",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        880,
+        192
+      ],
+      "id": "d16eae9e-c37f-4b86-9d88-449ef26b3903",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sBdhhl2tpOWwFj8k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f34f3019-b71e-40ab-960b-205cbb346431",
+              "name": "output['Langkah Kerja']",
+              "value": "=Tolong cek apakah langkah kerja ini sesuai dengan regulasi: {{ $json.output['Langkah Kerja'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1216,
+        0
+      ],
+      "id": "6907b2f5-bc35-48bd-9c66-4d9071f7061a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ambil teks mentah dari AI Agent\nlet rawOutput = $input.first().json.output;\n\n// Bersihkan karakter markdown dan newline\nlet cleanText = rawOutput\n  .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')  // Bold jadi <strong>\n  .replace(/\\\\n/g, '<br>')                            // \\n jadi <br>\n  .replace(/•/g, '&#8226;');                          // Bullet jadi HTML entity\n\n// Kembalikan hasil dalam array of objects\nreturn [\n  {\n    json: {\n      email_body: `<p>${cleanText}</p>`\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1904,
+        16
+      ],
+      "id": "e7f426e2-71ae-4c6e-b8b8-a5a98bbf41d1",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n\n<html>\n  <head>\n    <meta charset=\"UTF-8\">\n    <title>Laporan Audit</title>\n    <style>\n      body {\n        font-family: Arial, sans-serif;\n        font-size: 14px;\n        line-height: 1.6;\n        color: #333;\n      }\n      strong {\n        color: #222;\n      }\n    </style>\n  </head>\n  <body>\n    {{ $json.email_body }}\n  </body>\n</html>\n"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        2112,
+        16
+      ],
+      "id": "5d0f3d2f-ce06-423c-8bb0-43d0c89142cd",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "sendTo": "fadillahfarhan99@gmail.com, ghostwires18@gmail.com",
+        "subject": "CEK STEP KERJA",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2320,
+        16
+      ],
+      "id": "6937e61c-c983-4f5b-a609-7a445441447c",
+      "name": "Send a message",
+      "webhookId": "b4ffe98e-a77d-43e7-aec0-12bd66316948",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "tYemKUlljTuTIAs2",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recursive Character Text Splitter1": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader1",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader1": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store2",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "UPLOAD TO MISTRAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UPLOAD TO MISTRAL": {
+      "main": [
+        [
+          {
+            "node": "GET SIGNED URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET SIGNED URL": {
+      "main": [
+        [
+          {
+            "node": "GET OCR RESULT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET OCR RESULT": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ad2abb34-49a8-476d-92b3-f9525528dfad",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7234231b329e7a8919605c9f7c01a89c2d434f457372b75ec992c93aff0ba2fe"
+  },
+  "id": "a4IoQP8pzkmLzBX8",
+  "tags": []
+}

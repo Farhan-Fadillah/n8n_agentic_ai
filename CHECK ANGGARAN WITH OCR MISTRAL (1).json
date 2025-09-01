@@ -1,0 +1,471 @@
+{
+  "name": "CHECK ANGGARAN WITH OCR MISTRAL",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Input PDF",
+        "formDescription": "Input data PDF",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Input data pdf",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        400
+      ],
+      "id": "dbbd905c-de20-48d8-8516-6d3f605e25e0",
+      "name": "On form submission",
+      "webhookId": "d432e9c7-b182-4661-ae82-9d29485d9986"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "purpose",
+              "value": "ocr"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "Input_data_pdf"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        352,
+        400
+      ],
+      "id": "c0a72f99-d6a8-4095-8f0c-a84d4ae60478",
+      "name": "UPLOAD TO MISTRAL",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "iElLpDIiyuogjJc4",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/ocr",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"mistral-ocr-latest\",\n  \"document\": {\n    \"type\": \"document_url\",\n    \"document_url\": \"{{ $json.url }}\"\n  },\n  \"include_image_base64\": true\n} ",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        752,
+        400
+      ],
+      "id": "6605cded-d11f-43fc-ac76-281c68405614",
+      "name": "GET OCR RESULT",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "iElLpDIiyuogjJc4",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.pages[0].markdown }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Uang Harian",
+              "type": "number",
+              "description": "the number of uang harian"
+            },
+            {
+              "name": "Transport",
+              "type": "number",
+              "description": "the number of transport"
+            },
+            {
+              "name": "Penginapan",
+              "type": "number",
+              "description": "the number of penginapan"
+            },
+            {
+              "name": "company",
+              "description": "name of the title"
+            },
+            {
+              "name": "subtotal",
+              "type": "number",
+              "description": "amount of subtotal"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "You are an expert extraction algorithm.\nOnly extract relevant information from the text.\nIf you do not know the value of an attribute asked to extract, you may omit the attribute's value."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        992,
+        400
+      ],
+      "id": "56b942c7-88cc-4ca0-8b1f-a4e4ce389bfc",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        864,
+        672
+      ],
+      "id": "8faeae34-2b48-4032-b775-750ba11eb0de",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sBdhhl2tpOWwFj8k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "uangHarianThreshold",
+              "value": 100000
+            },
+            {
+              "name": "transportThreshold",
+              "value": 200000
+            },
+            {
+              "name": "penginapanThreshold",
+              "value": 500000
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Threshold",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        400
+      ],
+      "id": "2e432fc6-2606-427c-8020-730532045d7a"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $('Information Extractor').item.json.output['Uang Harian'] }}",
+              "operation": "larger",
+              "value2": "={{$node[\"Set Threshold\"].json[\"uangHarianThreshold\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "Check Uang Harian",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        288
+      ],
+      "id": "3a39d5fb-eacb-44a7-9b34-3296c4133189"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $('Information Extractor').item.json.output.Transport }}",
+              "operation": "larger",
+              "value2": "={{$node[\"Set Threshold\"].json[\"transportThreshold\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "Check Transport",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        448
+      ],
+      "id": "336417f8-2c68-493f-b41a-d5841ccc16ab"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $('Information Extractor').item.json.output.Penginapan }}",
+              "operation": "larger",
+              "value2": "={{$node[\"Set Threshold\"].json[\"penginapanThreshold\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "Check Penginapan",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        592
+      ],
+      "id": "3306f245-8b3d-4b90-b26b-f87e12d0fe6c"
+    },
+    {
+      "parameters": {
+        "sendTo": "=fadillahfarhan99@gmail.com,ghostwires18@gmail.com",
+        "subject": "CEK ANGGARAN MELEBIHI BATAS",
+        "emailType": "text",
+        "message": "=Dear User,\n\nTolong cek komponen biaya anggaran yang melebihi batas pada invoice tersebut:\nUang Harian:{{ $json.output['Uang Harian'] }}\nTransport:{{ $json.output.Transport }}\nPenginapan:{{ $json.output.Penginapan }}\n\nBest Regards,\nFarhan",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2400,
+        352
+      ],
+      "id": "1116ac2c-3aef-4006-8e8a-e562249c423b",
+      "name": "Send a message",
+      "webhookId": "d6de0d3c-db7e-4787-9f9a-844602fdd22f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "tYemKUlljTuTIAs2",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mistral.ai/v1/files/{{ $json.id }}/url",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "expiry",
+              "value": "24"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "24"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        528,
+        400
+      ],
+      "id": "4db0349f-782e-45e4-891f-db59fa92fe64",
+      "name": "GET SIGNED URL1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "dfasHHvgsoep1HB9",
+          "name": "Mistral AI OCR"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "UPLOAD TO MISTRAL": [
+      {
+        "json": {
+          "id": "e4d87c26-6f0b-401f-bd77-6916e27dbfd6",
+          "object": "file",
+          "bytes": 16294,
+          "created_at": 1755149135,
+          "filename": "out_sample_receipt_1.pdf",
+          "purpose": "ocr",
+          "sample_type": "ocr_input",
+          "num_lines": 0,
+          "mimetype": "application/pdf",
+          "source": "upload",
+          "signature": "5c66033e86dbc662d09065b24e02d102"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "UPLOAD TO MISTRAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UPLOAD TO MISTRAL": {
+      "main": [
+        [
+          {
+            "node": "GET SIGNED URL1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET OCR RESULT": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Threshold": {
+      "main": [
+        [
+          {
+            "node": "Check Uang Harian",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Transport",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Penginapan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Set Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Uang Harian": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Transport": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Penginapan": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET SIGNED URL1": {
+      "main": [
+        [
+          {
+            "node": "GET OCR RESULT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "331e5294-1c3c-49e9-9397-4695538bae32",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7234231b329e7a8919605c9f7c01a89c2d434f457372b75ec992c93aff0ba2fe"
+  },
+  "id": "aih6ft7XYgxb0lUP",
+  "tags": []
+}

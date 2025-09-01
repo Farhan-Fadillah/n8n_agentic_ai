@@ -1,0 +1,599 @@
+{
+  "name": "Analysis Flow",
+  "nodes": [
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -1104,
+        -272
+      ],
+      "id": "af0eabab-75ae-4e82-a00c-e2281be79760",
+      "name": "Postgres Chat Memory",
+      "notesInFlow": false,
+      "credentials": {
+        "postgres": {
+          "id": "jpjjoeeMA63G0XMl",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.agent }}",
+                    "rightValue": "sql",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "087407e1-3268-428c-9d78-9e61546cbaee"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SQL"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5c14a7ab-3c62-4d6b-9159-4e72164a994f",
+                    "leftValue": "={{ $json.agent }}",
+                    "rightValue": "chart",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CHART"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -240,
+        -336
+      ],
+      "id": "d2c4cb2b-42f0-44b7-b67c-c867a6dc39d0",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User Request: {{ $('When Executed by Another Workflow').item.json.first_input }}\n\nSuggested SQL Query: {{ $('When Executed by Another Workflow').item.json.query }}\n\n",
+        "options": {
+          "systemMessage": "You are a highly skilled SQL Developer specializing in crafting precise an SQL query to generate output based on user request "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -16,
+        -368
+      ],
+      "id": "2fdd9720-485e-4c8f-b337-196548c0e8cc",
+      "name": "AI Agent SQL"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Original Question: {{ $('When Executed by Another Workflow').item.json.first_input }}\n\nQuery for Charts: {{ $('When Executed by Another Workflow').item.json.query }}",
+        "options": {
+          "systemMessage": "=You are a specialized chart generation agent. Your task is to create charts based on data provided to you by the primary data analysis agent.\n\n**Input:**\nYou will receive data along with a description of the desired chart and any specific formatting instructions.\n\n**Instructions:**\n**Chart Types:** You can create the following chart types:\n*Bar charts\n*Line charts\n*Pie charts\n*Scatter plots\n*Area charts\n2. **Data Interpretation:** Interpret the provided JSON data to understand the data points and categories.\n\n3. **Chart Generation:** Use the provided data to generate the specified chart.\n\n4. **Formatting:** Apply any formatting instructions provided, such as:\n*Chart title\n*Axis labels\n*Color schemes\n*Legend\n5. **Output:** Provide the generated chart as a Quickcharts URL. Ensure the URL is correctly formatted and ready for embedding into an HTML email.\n\n6. **Tool:** You will use Quickcharts to generate the charts."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -48,
+        -16
+      ],
+      "id": "82176d70-9168-4e8a-a8d8-252bac665da1",
+      "name": "AI Agent Charts"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        208
+      ],
+      "id": "f376be15-fffe-4e44-9896-7d4173482130",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sBdhhl2tpOWwFj8k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        208
+      ],
+      "id": "3f23987f-d436-4a9f-a9f5-2b9bfe40d9dc",
+      "name": "Postgres Chat Memory1",
+      "credentials": {
+        "postgres": {
+          "id": "jpjjoeeMA63G0XMl",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "=Use this tool to create charts from the data extracted and parsed to you.\n\nImportant notes:\n\nEnsure that the generated chart is clear and easy to understand.\nUse appropiate chart types for the data being presented. Pay attention to formatting and labeling to ensure clarity",
+        "chartType": "={{ $fromAI('chart_type', 'best chart based on the users request and the data avilable') }}",
+        "data": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Data', ``, 'json') }}",
+        "output": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Put_Output_In_Field', ``, 'string') }}",
+        "chartOptions": {
+          "backgroundColor": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Background_Color', ``, 'string') }}"
+        },
+        "datasetOptions": {}
+      },
+      "type": "n8n-nodes-base.quickChartTool",
+      "typeVersion": 1,
+      "position": [
+        192,
+        208
+      ],
+      "id": "9d58ef07-9559-4739-bdf1-07480c892ac9",
+      "name": "QuickChart"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -160
+      ],
+      "id": "aec8ed3f-cbb6-4a6e-a935-8c3b37f6af2e",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sBdhhl2tpOWwFj8k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        -160
+      ],
+      "id": "ca048db2-1b86-4e95-8be3-4753ab66fdf2",
+      "name": "Postgres Chat Memory2",
+      "credentials": {
+        "postgres": {
+          "id": "jpjjoeeMA63G0XMl",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Execute a SQL query in PostgresUse this tool to execute SQL queries against the 'online-retail' table in the Supabase database. Input to this tool must be a valid PostgreSQL query string. Use it whenever you need data from the database to answer the user's question about online retail sales, products, customers, or countries",
+        "operation": "executeQuery",
+        "query": "{{ $fromAI('SQLQuery', 'Generate a valid PostgreSQL query, ensuring table and column names like \"online-retail\" and \"CustomerID\" are correctly double-quoted. to retrieve the data needed to answer the user\\'s request.') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        368,
+        -128
+      ],
+      "id": "21ec5f44-317e-4d21-b42c-7a11fe9be03c",
+      "name": "Execute a SQL query in Postgres",
+      "credentials": {
+        "postgres": {
+          "id": "jpjjoeeMA63G0XMl",
+          "name": "Postgres account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "agent"
+            },
+            {
+              "name": "chatInput"
+            },
+            {
+              "name": "sessionId"
+            }
+          ]
+        }
+      },
+      "id": "3b300f13-02cc-4d90-83ea-65feba71aa02",
+      "typeVersion": 1.1,
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -448,
+        -336
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1632,
+        -512
+      ],
+      "id": "05729ac9-d689-4ae5-afd4-3bdfff5356a9",
+      "name": "When chat message received",
+      "webhookId": "61331cd3-d75e-448d-aceb-0978f1a7adc3"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=Berikut adalah versi prompt yang sudah saya optimasi agar lebih ringkas, jelas, dan mudah dipahami tapi tetap lengkap sesuai konteks Anda sebagai analis data yang menggunakan database Supabase bernama 'online-retail':\n\nYou are a data analyst for the Supabase database \"online-retail\". Follow these rules exactly.\n\nContext:\n- DB name: \"online-retail\".\n- Table fields (use exactly with double quotes): \"InvoiceNo\", \"StockCode\", \"Description\", \"Quantity\", \"InvoiceDate\", \"UnitPrice\", \"CustomerID\", \"Country\".\n- Date format: YYYY-MM-DD. Currency: USD (use $). Annotate units (e.g., $1,234.56, 10 orders, 5 unique customers).\n\nTools:\n- call_SQL_Agent: run SQL against \"online-retail\". Return only raw query results (rows) as JSON array of objects. Do not transform or summarize in this tool.\n- call_Charts_Agent: create charts from SQL results. Accepts input JSON with explicit fields: chart_type, title, x, y, series, labels, options. Returns chart URL or base64 image and metadata.\n\nGeneral behavior:\n1. Always plan: (a) state the objective, (b) list required SQL queries, (c) run call_SQL_Agent for data, (d) validate results structure, (e) call call_Charts_Agent if chart requested, (f) compose HTML (if asked).\n2. Never fabricate data. If DB lacks data for the requested range, return empty datasets with a clear note.\n3. Keep SQL minimal and performant (use indexed columns, limit where possible); avoid SELECT * when not needed.\n4. Use parameterized dates/filters; echo back the exact SQL used.\n5. Output formats must match the schemas defined below. If any step cannot be complied with, abort and return an error object (see error schema).\n6. If user requests email, ask for explicit confirmation: \"Confirm SEND_EMAIL (yes/no).\"\n\nStrict output schemas (use exactly):\n- SQL result wrapper (from Call n8n Workflow Tool1):\n  { \"status\":\"ok\", \"rows\": [ { /* column:value pairs */ } ], \"row_count\": N }\n\n- Chart request to Call n8n Workflow Tool (input):\n  { \"chart_type\":\"line|bar|pie\", \"title\": string, \"x\": [ ... ], \"series\": [ { \"name\": string, \"data\": [ ... ], \"unit\": string } ], \"options\": { /* optional */ } }\n\n- Chart response (from Call n8n Workflow Tool):\n  { \"status\":\"ok\", \"chart_url\": string, \"chart_type\": string, \"summary\": string }\n\n- Error (always this shape):\n  { \"status\":\"error\", \"code\": \"brief_code\", \"message\": \"human readable message\", \"details\": { /* optional */ } }\n\nAlways return data wrapped as n8n items (array of { \"json\": <object> }) when sending between nodes.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -1152,
+        -672
+      ],
+      "id": "26eed238-7348-4aaa-81d0-dd84503145b1",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1296,
+        -464
+      ],
+      "id": "036d20d9-ce48-4e8a-936e-a6055c29144d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sBdhhl2tpOWwFj8k",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "=Anda adalah Generator Permintaan Bagan. Keluarkan HANYA satu objek JSON, tanpa teks di sekitarnya, tanpa markdown, dan tanpa penjelasan. JSON harus sama persis dengan skema ini:\n\n{ \"status\": \"ok\" | \"kesalahan\", \"muatan\": { \"jenis_bagan\": \"garis\" | \"batang\" | \"pai\", \"judul\": string, \"x\": [string, ...], \"seri\": [ { \"nama\": string, \"data\": [angka, ...], \"satuan\": string } ], \"pilihan\": { ... opsional ... } }, \"kesalahan\": { \"kode\": string, \"pesan\": string } // hanya ketika status == \"kesalahan\" }",
+        "workflowId": {
+          "__rl": true,
+          "value": "AoHJVhEfNDseRL9e",
+          "mode": "list",
+          "cachedResultName": "Analysis Flow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "agent": "chart",
+            "sessionId": "={{ $('When chat message received').item.json.sessionId }}",
+            "chatInput": "={{ $('When chat message received').item.json.chatInput }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "chatInput",
+              "displayName": "chatInput",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -752,
+        -272
+      ],
+      "id": "9fa9ade9-8c86-4e56-94dd-554bb6fa76b1",
+      "name": "Call n8n Workflow Chart"
+    },
+    {
+      "parameters": {
+        "description": "You are an SQL-generation assistant. You MUST output exactly one JSON object and nothing else (no explanation, no markdown, no leading/trailing text). \nThe JSON MUST follow this schema:\n{\n  \"status\": \"ok\" | \"error\",\n  \"query\": string,          // the SQL SELECT query to run (single statement)\n  \"params\": [ any ]         // optional array of parameter values (can be empty)\n}\n\nRules:\n1. Only produce SELECT queries. Do NOT produce INSERT/UPDATE/DELETE/DROP/ALTER or any DDL/DML.\n2. Use only tables and columns from the provided DB_SCHEMA. If DB_SCHEMA is missing or does not contain requested fields, return error.\n3. If the user asks for aggregated results (sum/avg/count/ group by), produce proper GROUP BY and aliases.\n4. If the user asks for a top-N, include a LIMIT clause. Default LIMIT = 100 if not specified.\n5. If column names contain spaces/special chars, quote them using double quotes according to SQL dialect (use standard quoting).\n6. Use parameter placeholders only if requested by the workflow; otherwise return a plain SQL string. If parameters are used, set them in \"params\" in correct order.\n7. If user intent is ambiguous (which column to aggregate, which group, etc.), choose reasonable defaults and state them only via an error code (see below) — DO NOT add free text.\n8. If cannot produce a valid SELECT (missing table/column/ambiguous), return:\n   { \"status\":\"error\", \"query\":\"\", \"params\":[], \"message\":\"ERROR_CODE: short message\" }\n   Example error codes: NO_TABLE, NO_COLUMN, AMBIGUOUS_REQUEST, UNABLE_TO_PARSE.\n",
+        "workflowId": {
+          "__rl": true,
+          "value": "AoHJVhEfNDseRL9e",
+          "mode": "list",
+          "cachedResultName": "Analysis Flow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "agent": "sql",
+            "sessionId": "={{ $('When chat message received').item.json.sessionId }}",
+            "chatInput": "={{ $('When chat message received').item.json.chatInput }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "chatInput",
+              "displayName": "chatInput",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -624,
+        -448
+      ],
+      "id": "6ea36c96-508f-4262-92e5-7250288d647a",
+      "name": "Call n8n Workflow SQL"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "AI Agent SQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent Charts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Charts",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent Charts",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QuickChart": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Charts",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent SQL",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory2": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent SQL",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query in Postgres": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent SQL",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call n8n Workflow Chart": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call n8n Workflow SQL": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "19522384-480b-4ac8-b213-636b1453dfc4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7234231b329e7a8919605c9f7c01a89c2d434f457372b75ec992c93aff0ba2fe"
+  },
+  "id": "AoHJVhEfNDseRL9e",
+  "tags": []
+}
